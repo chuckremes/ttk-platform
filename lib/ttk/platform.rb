@@ -1,6 +1,8 @@
 require_relative "platform/config/config"
 
+require_relative "platform/wrappers/position"
 require_relative "platform/wrappers/quote"
+require_relative "platform/wrappers/spread"
 
 require_relative "platform/collections/collection"
 require_relative "platform/collections/orders"

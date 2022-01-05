@@ -8,10 +8,6 @@ module TTK
   module Platform
     module Collections
       class Positions < Collection
-        def initialize(vendor_interface:, collection:, meta: {})
-          super
-        end
-
         def spreads
           groups = TTK::Containers::Combo::Group.regroup(@collection)
           array = groups.map do |group|
