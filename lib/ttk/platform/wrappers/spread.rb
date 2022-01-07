@@ -1,13 +1,14 @@
 require 'delegate'
 
-# Spread is an abstract base class for all Spreads. It sets the basic
+# Combo is an abstract base class for all single-leg and multi-leg
+# spreads. It sets the basic
 # interface that all subclasses should implement. It cannot be
 # instantiated directly since it is missing many methods that are
 # only implemented by concrete subclasses.
 #
 # The constructor detects the types of legs in the spread and creates
 # an internal Put / Call class. Any methods that are not implemented
-# on the Spread (or its subclass) are delegated to the Put / Call
+# on the Combo (or its subclass) are delegated to the Put / Call
 # internal class.
 #
 module TTK
@@ -209,6 +210,61 @@ module TTK
           check_sides(container)
           check_expiration(container)
           check_strikes(container)
+        end
+      end
+
+      class Single < Spread
+
+        def bid
+          body_leg.bid
+        end
+
+        def ask
+          body_leg.ask
+        end
+
+        def strike
+          body_leg.strike
+        end
+
+        def expiration_date
+          body_leg.expiration_date
+        end
+
+        def side
+          body_leg.side
+        end
+
+        def unit_price
+          limit_price / filled_quantity
+        end
+
+        private
+
+        def check_leg_count(container)
+          return if container.count == 1
+          raise SpreadFormError.new("Too many legs! #{container.legs.each(&:nice_print)}")
+        end
+
+        def check_leg_kind(container)
+          return if container.put? || container.call?
+          raise SpreadFormError.new("Should be a straddle! #{container.legs.each(&:nice_print)}")
+        end
+
+        def check_sides(container)
+          side =  container.map(:side)
+          return unless [:long, :short].include?(side)
+          raise SpreadFormError.new("Not a real order with same sides! #{container.legs.each(&:nice_print)}")
+        end
+
+        def check_expiration(container)
+          return if container.map(:expiration_date).uniq.count == 1
+          raise SpreadFormError.new("Should be a calendar / diagonal! #{container.legs.each(&:nice_print)}")
+        end
+
+        def check_strikes(container)
+          return if container.map(:strike).uniq.count == 1
+          raise SpreadFormError.new("Should be a vertical! #{container.legs.each(&:nice_print)}")
         end
       end
 

@@ -6,7 +6,7 @@ RSpec.describe TTK::Platform::Wrappers::Vertical do
 
   context "with puts" do
     context "given a bull put spread" do
-      let(:container) { make_put_vertical(side: :short) }
+      let(:container) { make_put_vertical_position(side: :short) }
       let(:strike1) { spread.legs[0].strike }
       let(:strike2) { spread.legs[1].strike }
 
@@ -62,7 +62,7 @@ RSpec.describe TTK::Platform::Wrappers::Vertical do
     end
 
     context "given a bear put spread" do
-      let(:container) { make_put_vertical(side: :long) }
+      let(:container) { make_put_vertical_position(side: :long) }
       let(:strike1) { spread.legs[0].strike }
       let(:strike2) { spread.legs[1].strike }
 
@@ -120,7 +120,7 @@ RSpec.describe TTK::Platform::Wrappers::Vertical do
 
   context "with calls" do
     context "given a bear call spread" do
-      let(:container) { make_call_vertical(side: :short) }
+      let(:container) { make_call_vertical_position(side: :short) }
       let(:strike1) { spread.legs[0].strike }
       let(:strike2) { spread.legs[1].strike }
 
@@ -176,7 +176,7 @@ RSpec.describe TTK::Platform::Wrappers::Vertical do
     end
 
     context "given a bull call spread" do
-      let(:container) { make_call_vertical(side: :long) }
+      let(:container) { make_call_vertical_position(side: :long) }
       let(:strike1) { spread.legs[0].strike }
       let(:strike2) { spread.legs[1].strike }
 
