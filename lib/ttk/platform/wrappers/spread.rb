@@ -68,6 +68,58 @@ module TTK
             ((bid + ask) / 2.0).round(2, half: :down)
           end
 
+          # when difference is positive, we are moving OTM
+          # when difference is negative, we are moving ITM
+          def project_price_at(difference:, debug: false)
+            spread_delta = delta.abs
+            spread_gamma = gamma.abs
+
+            integral = (difference.abs / 1).to_i
+
+            # must use absolute value so signs are aligned;
+            # to see why, do -0.102 % 1.0 vs -0.102 % -1.0
+            mantissa = difference.abs % 1.0
+            total = 0.0
+            STDERR.puts "difference".rjust(10).ljust(11) +
+                          "delta".rjust(7).ljust(8) +
+                          "gamma".rjust(7).ljust(8) +
+                          "integral".rjust(8).ljust(9) +
+                          "mantissa".rjust(8).ljust(9) if debug
+            STDERR.puts difference.round(2).to_s.rjust(10).ljust(11) +
+                          spread_delta.round(2).to_s.rjust(7).ljust(8) +
+                          spread_gamma.round(2).to_s.rjust(7).ljust(8) +
+                          integral.round(2).to_s.rjust(8).ljust(9) +
+                          mantissa.round(2).to_s.rjust(8).ljust(9) if debug
+
+            # accumulate the delta for each $1 difference in cost
+            # if moving *down* towards ATM, then delta should get bigger so add in gamma for
+            # each $1 move
+            # as we get more OTM, gamma should shrink; as it gets more ITM, it should grow
+            # this gamma model is weak as it's using a fixed 10%
+            integral.abs.times do
+              spread_delta = difference.positive? ? (spread_delta - spread_gamma) : (spread_delta + spread_gamma)
+              spread_gamma = difference.positive? ? (spread_gamma - (spread_gamma * 0.1)) : (spread_gamma + (spread_gamma * 0.1))
+              total += spread_delta
+            end
+
+            # account for the fractional dollar by adding those cents to the total
+            total += (spread_delta * mantissa)
+
+            # if spread is moving more towards ITM, we'll want this to be a positive number
+            # if spread moving more towards OTM, we'll want it to be negative so price is smaller
+            total = difference.positive? ? -total : total
+            STDERR.puts "total".rjust(7).ljust(8) +
+                          "mid".rjust(7).ljust(8) +
+                          "sum".rjust(7).ljust(8) if debug
+            STDERR.puts total.round(2).to_s.rjust(7).ljust(8) +
+                          midpoint.round(2).to_s.rjust(7).ljust(8) +
+                          (midpoint + total).round(2).to_s.rjust(7).ljust(8) if debug
+
+            midpoint + total
+          rescue => e
+            binding.pry
+          end
+
           def nice_print
             separator = ' | '
             now = Time.now.strftime("%Y%m%d-%H:%M:%S.%L").rjust(21).ljust(22)
@@ -106,50 +158,11 @@ module TTK
           # underlying.
           #
           def project_price_at(underlying:, target:, debug: false)
+            # when difference is positive, we are moving OTM
+            # when difference is negative, we are moving ITM
             difference = (underlying - target)
-            spread_delta = delta
-            spread_gamma = gamma
-
-            integral = (difference / 1).to_i
-            mantissa = difference % 1.0
-            total = 0.0
-            STDERR.puts "difference".rjust(10).ljust(11) +
-                          "delta".rjust(7).ljust(8) +
-                          "gamma".rjust(7).ljust(8) +
-                          "integral".rjust(8).ljust(9) +
-                          "mantissa".rjust(8).ljust(9) if debug
-            STDERR.puts difference.round(2).to_s.rjust(10).ljust(11) +
-                          spread_delta.round(2).to_s.rjust(7).ljust(8) +
-                          spread_gamma.round(2).to_s.rjust(7).ljust(8) +
-                          integral.round(2).to_s.rjust(8).ljust(9) +
-                          mantissa.round(2).to_s.rjust(8).ljust(9) if debug
-
-            # accumulate the delta for each $1 difference in cost
-            # if moving *down* towards ATM, then delta should get bigger so add in gamma for
-            # each $1 move
-            integral.abs.times do
-              spread_delta = difference.positive? ? (spread_delta - spread_gamma) : (spread_delta + spread_gamma)
-              total += spread_delta
-            end
-
-            # account for the fractional dollar by adding those cents to the total
-            total += (spread_delta * mantissa)
-
-            # if spread is moving more towards ITM, we'll want this to be a positive number
-            # if spread moving more towards OTM, we'll want it to be negative so price is smaller
-            total = difference.positive? ? total : total * -1
-            STDERR.puts "total".rjust(7).ljust(8) +
-                          "mid".rjust(7).ljust(8) +
-                          "sum".rjust(7).ljust(8) if debug
-            STDERR.puts total.round(2).to_s.rjust(7).ljust(8) +
-                          midpoint.round(2).to_s.rjust(7).ljust(8) +
-                          (midpoint + total).round(2).to_s.rjust(7).ljust(8) if debug
-
-            midpoint + total
-          rescue => e
-            binding.pry
+            super(difference: difference, debug: debug)
           end
-
         end
 
         class Calls < Base
@@ -162,19 +175,32 @@ module TTK
           def wing_strike
             map(:strike).max
           end
+
+          # Using the current value of the spread plus the greeks, guess
+          # what the spread price will be at the give +price+ of the
+          # underlying.
+          #
+          def project_price_at(underlying:, target:, debug: false)
+            # when difference is positive, we are moving OTM
+            # when difference is negative, we are moving ITM
+            difference = (target - underlying)
+            super(difference: difference, debug: debug)
+          end
         end
 
         # Spread class is abstract.
         def initialize(container)
           sanity_check(container)
-          if container.put?
-            super(Puts.new(container))
-          elsif container.call?
-            super(Calls.new(container))
-          else
-            # equity container?
-            raise "Need to define an equity container"
-          end
+          @container = if container.put?
+                         @interior_container = Puts.new(container)
+                         super(@interior_container)
+                       elsif container.call?
+                         @interior_container = Calls.new(container)
+                         super(@interior_container)
+                       else
+                         # equity container?
+                         raise "Need to define an equity container"
+                       end
         end
 
         def spread?
@@ -252,7 +278,7 @@ module TTK
         end
 
         def check_sides(container)
-          side =  container.map(:side)
+          side = container.map(:side)
           return unless [:long, :short].include?(side)
           raise SpreadFormError.new("Not a real order with same sides! #{container.legs.each(&:nice_print)}")
         end

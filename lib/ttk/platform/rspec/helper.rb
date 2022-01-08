@@ -10,21 +10,29 @@ module Helper
   # a bear spread; switching to :short makes it a bull spread.
   #
   def make_put_vertical_position(side: :long, quantity: 1, strike: 100)
+    legs = make_put_vertical_position_legs(side: side, quantity: quantity, strike: strike)
+    TTK::Platform::Wrappers::Vertical.new(legs)
+  end
+
+  def make_put_vertical_position_legs(side: :long, quantity: 1, strike: 100)
     side1, side2 = side == :long ? [:long, :short] : [:short, :long]
 
     legs = [make_option_leg(callput: :put, side: side2, strike: strike - 10, filled_quantity: quantity, leg_id: 1),
             make_option_leg(callput: :put, side: side1, strike: strike,  filled_quantity: quantity, leg_id: 2)]
-    TTK::Platform::Wrappers::Vertical.new(
-      TTK::Containers::Legs::Position::Example.new(legs: legs))
+    TTK::Containers::Legs::Position::Example.new(legs: legs)
   end
 
   def make_call_vertical_position(side: :long, quantity: 1, strike: 100)
+    legs = make_call_vertical_position_legs(side: side, quantity: quantity, strike: strike)
+    TTK::Platform::Wrappers::Vertical.new(legs)
+  end
+
+  def make_call_vertical_position_legs(side: :long, quantity: 1, strike: 100)
     side1, side2 = side == :long ? [:long, :short] : [:short, :long]
 
     legs = [make_option_leg(callput: :call, side: side1, strike: strike - 10, filled_quantity: quantity, leg_id: 1),
             make_option_leg(callput: :call, side: side2, strike: strike,  filled_quantity: quantity, leg_id: 2)]
-    TTK::Platform::Wrappers::Vertical.new(
-      TTK::Containers::Legs::Position::Example.new(legs: legs))
+    TTK::Containers::Legs::Position::Example.new(legs: legs)
   end
 
   def make_put_single_position(side: long, quantity: 1, strike: 100)
