@@ -30,6 +30,9 @@ module TTK
           @interface.refresh # force vendor to reload
         end
 
+        # Root symbols like "SPY" and "AAPL". Do not use OSI formatted symbols
+        # in this call.
+        #
         def symbols(*list)
           self.class.new(collection: select { |element| list.include?(element.symbol) },
             vendor_interface: interface,

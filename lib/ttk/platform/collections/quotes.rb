@@ -64,6 +64,14 @@ module TTK
             meta: package_meta)
         end
 
+        # When a Quote has been retrieved elsewhere (e.g. via a Chain), we can register
+        # it here for updates.
+        #
+        def register(quote:)
+          return unless quote.respond_to?(:update_quote)
+          collection << quote
+        end
+
         # Subscribe to get a quote update.
         #
         # +cycle+ => :once or :forever, defaults to :once
@@ -77,7 +85,7 @@ module TTK
           return quote if quote # already subscribed so return directly
 
           quote = populate(symbol: symbol, type: type)
-          collection << quote
+          register(quote: quote)
           quote
         end
 
@@ -91,6 +99,8 @@ module TTK
         end
 
         def find(symbol:)
+          # From chains also wrapping quotes, there *could be* multiple symbol wrappers
+          # for a single OSI symbol; just use first one found
           collection.find { |element| element.osi == symbol }
         end
 
@@ -106,25 +116,29 @@ module TTK
         # synchronously but this will be moved to its own thread (likely)
         # and then updated on some routine refresh cycle.
         def refresh
-          equity = collection.select { |element| element.equity? }
-          equity_options = collection.select { |element| element.equity_option? }
+          STDERR.puts "called from..."
+          pp caller(0, 4)
+
+          equity = collection.select { |element| element.equity? }.
+            map { |element| element.osi }.uniq
+          equity_options = collection.select { |element| element.equity_option? }.
+            map { |element| element.osi }.uniq
 
           responses = []
 
           # Async do |task|
           #   @limiter.async do
-          responses += interface.lookup_quotes(equity)
+          responses += interface.lookup_quotes(symbols: equity, type: :equity)
           # end
           # @limiter.async do
-          responses += interface.lookup_quotes(equity_options)
+          responses += interface.lookup_quotes(symbols: equity_options, type: :equity_option)
           #   end
           # end.wait # do not proceed until all fetches are complete
 
           responses.each do |response|
-            quote = find(symbol: response.osi)
-            raise MissingQuoteWrapper.new(response.osi) unless quote
-
-            quote.update_quote(response)
+            collection.select { |element| element.osi == response.osi }.each do |quote|
+              quote.update_quote(response)
+            end
           end
         end
       end

@@ -9,6 +9,22 @@ module TTK
       # Contains all of the chains for a given symbol.
       #
       class ChainGroup < Collection
+        private attr_reader :quotes
+
+        def initialize(vendor_interface:, collection:, quotes:, meta: {})
+          super(vendor_interface: vendor_interface, collection: collection, meta: meta)
+          @quotes = quotes
+        end
+
+        # Iterates over the current collection and subscribes to every
+        # option.
+        #
+        def subscribe
+          each do |option|
+            quotes.register(quote: option)
+          end
+        end
+
         def dte(min: nil, max: nil, exact: nil)
           if exact
             min = max = exact
@@ -18,28 +34,39 @@ module TTK
           max ||= Float::INFINITY
           self.class.new(vendor_interface: interface,
             meta: package_meta,
-            collection: collection.select { |o| o.dte.between?(min, max) })
+            collection: collection.select { |o| o.dte.between?(min, max) },
+            quotes: quotes)
         end
 
         def puts
           self.class.new(vendor_interface: interface,
             meta: package_meta,
-            collection: collection.select { |o| o.put? })
+            collection: collection.select { |o| o.put? },
+            quotes: quotes)
         end
 
         def calls
           self.class.new(vendor_interface: interface,
             meta: package_meta,
-            collection: collection.select { |o| o.call? })
+            collection: collection.select { |o| o.call? },
+            quotes: quotes)
+        end
+
+        def expirations(*e)
+          self.class.new(vendor_interface: interface,
+            meta: package_meta,
+            collection: collection.select { |o| e.include?(o.expiration_date.date) },
+            quotes: quotes)
         end
 
         def delta(min: nil, max: nil)
           # always use absolute value of delta
-          min = min.abs || 0
-          max = max.abs || Float::INFINITY
+          min = min&.abs || 0
+          max = max&.abs || Float::INFINITY
           self.class.new(vendor_interface: interface,
             meta: package_meta,
-            collection: collection.select { |o| o.delta.abs.between?(min, max) })
+            collection: collection.select { |o| o.delta.abs.between?(min, max) },
+            quotes: quotes)
         end
 
         # Find all options between min and max and keep only those with the highest
@@ -50,7 +77,8 @@ module TTK
           max ||= Float::INFINITY
           self.class.new(vendor_interface: interface,
             meta: package_meta,
-            collection: select_field_range(field: :dte, boundary: :max))
+            collection: select_field_range(field: :dte, boundary: :max),
+            quotes: quotes)
         end
 
         def min_dte(min: nil, max: nil)
@@ -58,7 +86,8 @@ module TTK
           max ||= Float::INFINITY
           self.class.new(vendor_interface: interface,
             meta: package_meta,
-            collection: select_field_range(field: :dte, boundary: :min))
+            collection: select_field_range(field: :dte, boundary: :min),
+            quotes: quotes)
         end
 
         # Used to find closest to ATM. Should likely only be called on a chain
@@ -91,19 +120,22 @@ module TTK
         def strikes_at(price)
           self.class.new(vendor_interface: interface,
             meta: package_meta,
-            collection: collection.select { |o| o.strike == price })
+            collection: collection.select { |o| o.strike == price },
+            quotes: quotes)
         end
 
         def strikes_above(price)
           self.class.new(vendor_interface: interface,
             meta: package_meta,
-            collection: collection.select { |o| o.strike > price })
+            collection: collection.select { |o| o.strike > price },
+            quotes: quotes)
         end
 
         def strikes_below(price)
           self.class.new(vendor_interface: interface,
             meta: package_meta,
-            collection: collection.select { |o| o.strike < price })
+            collection: collection.select { |o| o.strike < price },
+            quotes: quotes)
         end
 
         # FIXME: rewrite this as individual methods and then see how to refactor
@@ -116,8 +148,8 @@ module TTK
           # allows us to set the specific field we want for comparison. Clever?
           # Let's us dynamically change fields per call.
           selected_value = collection.uniq { |o| o.send(field) }
-            .map { |o| Comparator.new(o, field: field) }
-            .send(boundary)
+                                     .map { |o| Comparator.new(o, field: field) }
+                                     .send(boundary)
                              &.send(field)
           # STDERR.puts "select_field_range, field: #{field}, boundary: #{boundary}, value: #{selected_value}"
           collection.select { |o| o.send(field) == selected_value }
