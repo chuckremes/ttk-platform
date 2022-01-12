@@ -20,3 +20,22 @@ should present an identical interface, so the other
 high level constructs here can interchangeably use any
 broker without modification. (Will be cool if this
 actually works.)
+
+# To Do
+
+In the `project_price_at` method, it makes some very
+simple assumptions about how the greeks will change
+as price changes. In particular the gamma assumptions
+are really bad. We treat the entire spread/combo as an
+atomic unit but the greeks for each leg should be
+modeled individually. As price approaches ATM, gamma
+should go up. As it goes OTM or ITM, it should
+shrink. We assume gamma shrinks OTM but grows ITM.
+
+Right way to solve this is to do the greek changes
+for each individual leg and then combine the leg
+midpoint prices back at the combo level. Some legs
+may be going toward ATM while other legs are moving
+away from ATM, so we can accommodate that for each
+leg whereas we can't do it with the current 
+approach.
