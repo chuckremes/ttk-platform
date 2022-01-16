@@ -15,14 +15,16 @@ module TTK
         end
 
         def spreads
-          array = map do |order|
-            # In the future, may want to pass through the actual vendors
-            # classification if a) they provide one, and b) it is correct.
-            # By using nil we force the classification logic to exhaustively
-            # work through the possibilities.
-            TTK::Core::Combo.classify(container: order)
-          end
+          # array = map do |order|
+          #   # In the future, may want to pass through the actual vendors
+          #   # classification if a) they provide one, and b) it is correct.
+          #   # By using nil we force the classification logic to exhaustively
+          #   # work through the possibilities.
+          #   TTK::Containers::Legs::Classifier::Combo.classify(container: order)
+          # end
 
+          kinds = [:vertical, :diagonal, :calendar]
+          array = select { |element| kinds.include?(element.order_type) }
           self.class.new(collection: array, vendor_interface: interface, meta: package_meta)
         end
 
@@ -31,9 +33,11 @@ module TTK
         end
 
         def new_vertical_spread(body_leg:, wing_leg:)
-          container = @collection.new_vertical_spread(body_leg: body_leg, wing_leg: wing_leg)
-          # binding.pry
-          TTK::Core::Combo::Spread::Vertical.new(container)
+          # container = @collection.new_vertical_spread(body_leg: body_leg, wing_leg: wing_leg)
+          # # binding.pry
+          # TTK::Platform::Wrappers::Vertical.new(container)
+          TTK::Platform::Wrappers::Vertical.new(TTK::Platform::Order::Vertical.new(
+            body: body_leg, wing: wing_leg, vendor: interface))
         end
 
         # Takes a request to cancel an order and submits it. If there is already a pending

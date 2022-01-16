@@ -53,9 +53,20 @@ module TTK
         end
 
         def expirations(*e)
+          list = e.map do |element|
+            if element.is_a?(Date)
+              element
+            elsif element.respond_to?(:date)
+              element.date
+            else
+              binding.pry
+              raise "say what?"
+            end
+          end
+
           self.class.new(vendor_interface: interface,
             meta: package_meta,
-            collection: collection.select { |o| e.include?(o.expiration_date.date) },
+            collection: collection.select { |o| list.include?(o.expiration_date.date) },
             quotes: quotes)
         end
 

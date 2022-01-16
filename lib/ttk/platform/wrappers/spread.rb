@@ -29,6 +29,8 @@ module TTK
         # The +container+ is assumed to be a type of TTK::Containers::Legs
         #
         class Base < SimpleDelegator
+          attr_reader :container
+
           def initialize(container)
             @container = container
             super(container)
@@ -144,13 +146,13 @@ module TTK
 
         class Puts < Base
           def body_strike
-            map(:strike).max
+            legs.map(&:strike).max
           end
 
           alias_method :anchor_strike, :body_strike
 
           def wing_strike
-            map(:strike).min
+            legs.map(&:strike).min
           end
 
           # Using the current value of the spread plus the greeks, guess
@@ -167,13 +169,13 @@ module TTK
 
         class Calls < Base
           def body_strike
-            map(:strike).min
+            legs.map(&:strike).min
           end
 
           alias_method :anchor_strike, :body_strike
 
           def wing_strike
-            map(:strike).max
+            legs.map(&:strike).max
           end
 
           # Using the current value of the spread plus the greeks, guess
@@ -241,6 +243,10 @@ module TTK
 
       class Single < Spread
 
+        def spread?
+          false
+        end
+
         def bid
           body_leg.bid
         end
@@ -261,6 +267,10 @@ module TTK
           body_leg.side
         end
 
+        def direction
+          body_leg.direction
+        end
+
         def unit_price
           limit_price / filled_quantity
         end
@@ -278,18 +288,15 @@ module TTK
         end
 
         def check_sides(container)
-          side = container.map(:side)
-          return unless [:long, :short].include?(side)
-          raise SpreadFormError.new("Not a real order with same sides! #{container.legs.each(&:nice_print)}")
         end
 
         def check_expiration(container)
-          return if container.map(:expiration_date).uniq.count == 1
+          return if container.legs.map(&:expiration_date).map(&:date).uniq.count == 1
           raise SpreadFormError.new("Should be a calendar / diagonal! #{container.legs.each(&:nice_print)}")
         end
 
         def check_strikes(container)
-          return if container.map(:strike).uniq.count == 1
+          return if container.legs.map(&:strike).uniq.count == 1
           raise SpreadFormError.new("Should be a vertical! #{container.legs.each(&:nice_print)}")
         end
       end
@@ -325,12 +332,19 @@ module TTK
 
         def expiration_date
           # verticals only have one expiration
-          legs[0].expiration_date
+          legs[0].expiration_date.date
         end
 
+        # FIXME: need tests to confirm this is always part of interface
         def side
-          # long/short is determined by the side of the body strike
+          # side is determined by the side of the body strike
           legs.find { |l| l.strike == body_strike }.side
+        end
+
+        # FIXME: need tests to confirm this is always part of interface
+        def direction
+          # direction is determined by the side of the body strike
+          legs.find { |l| l.strike == body_strike }.direction
         end
 
         def unit_price
@@ -350,24 +364,24 @@ module TTK
         end
 
         def check_sides(container)
-          return if container.map(:side).sort == [:long, :short]
-          raise SpreadFormError.new("Not a real spread with same sides! #{container.legs.each(&:nice_print)}")
+          return
         end
 
         def check_expiration(container)
-          return if container.map(:expiration_date).uniq.count == 1
+          # return if container.map(:expiration_date).uniq.count == 1
+          return if container.legs.map(&:expiration_date).map(&:date).uniq.count == 1
           raise SpreadFormError.new("Should be a calendar / diagonal! #{container.legs.each(&:nice_print)}")
         end
 
         def check_strikes(container)
-          return if container.map(:strike).uniq.count == 2
+          return if container.legs.map(&:strike).uniq.count == 2
           raise SpreadFormError.new("Should be a calendar! #{container.legs.each(&:nice_print)}")
         end
       end
 
       class Diagonal < Vertical
         def check_expiration(container)
-          return if container.expiration_dates.uniq.count == 2
+          return if container.legs.map(&:expiration_date).map(&:date).uniq.count == 2
           raise SpreadFormError.new("Should be a calendar / diagonal! #{container.inspect}")
         end
       end
@@ -375,7 +389,7 @@ module TTK
       class Calendar < Diagonal
 
         def check_strikes(container)
-          return if container.strikes.uniq.count == 1
+          return if container.legs.map(&:strike).uniq.count == 1
           raise SpreadFormError.new("Should be a diagonal! #{container.legs.each(&:nice_print)}")
         end
       end
@@ -405,8 +419,7 @@ module TTK
         end
 
         def check_sides(container)
-          return if container.sides.sort == [:long, :long, :short, :short]
-          raise SpreadFormError.new("Not a real spread with same sides! #{container.legs.each(&:nice_print)}")
+          return
         end
 
         def check_strikes(container)
