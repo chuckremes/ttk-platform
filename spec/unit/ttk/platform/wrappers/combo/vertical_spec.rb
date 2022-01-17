@@ -32,10 +32,10 @@ RSpec.describe TTK::Platform::Wrappers::Combo::Vertical do
         end
       end
 
-      describe "#expiration_date" do
-        subject(:expiration_date) { vertical.expiration_date.date }
+      describe "#expiration" do
+        subject(:expiration_date) { vertical.expiration.date }
         it "returns the lowest strike" do
-          expect(expiration_date).to eq spread.legs[0].expiration_date.date
+          expect(expiration_date).to eq spread.legs[0].expiration.date
         end
       end
 
@@ -89,9 +89,9 @@ RSpec.describe TTK::Platform::Wrappers::Combo::Vertical do
       end
 
       describe "#expiration_date" do
-        subject(:expiration_date) { vertical.expiration_date.date }
+        subject(:expiration_date) { vertical.expiration.date }
         it "returns the lowest strike" do
-          expect(expiration_date).to eq spread.legs[0].expiration_date.date
+          expect(expiration_date).to eq spread.legs[0].expiration.date
         end
       end
 
@@ -147,9 +147,9 @@ RSpec.describe TTK::Platform::Wrappers::Combo::Vertical do
       end
 
       describe "#expiration_date" do
-        subject(:expiration_date) { vertical.expiration_date.date }
+        subject(:expiration_date) { vertical.expiration.date }
         it "returns the expiration" do
-          expect(expiration_date).to eq spread.legs[0].expiration_date.date
+          expect(expiration_date).to eq spread.legs[0].expiration.date
         end
       end
 
@@ -203,9 +203,9 @@ RSpec.describe TTK::Platform::Wrappers::Combo::Vertical do
       end
 
       describe "#expiration_date" do
-        subject(:expiration_date) { vertical.expiration_date.date }
+        subject(:expiration_date) { vertical.expiration.date }
         it "returns the expiration" do
-          expect(expiration_date).to eq spread.legs[0].expiration_date.date
+          expect(expiration_date).to eq spread.legs[0].expiration.date
         end
       end
 

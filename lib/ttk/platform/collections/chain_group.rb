@@ -66,7 +66,7 @@ module TTK
 
           self.class.new(vendor_interface: interface,
             meta: package_meta,
-            collection: collection.select { |o| list.include?(o.expiration_date.date) },
+            collection: collection.select { |o| list.include?(o.expiration.date) },
             quotes: quotes)
         end
 

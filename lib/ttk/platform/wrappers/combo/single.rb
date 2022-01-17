@@ -51,7 +51,7 @@ module TTK
           end
 
           def check_expiration(container)
-            return if container.legs.map(&:expiration_date).map(&:date).uniq.count == 1
+            return if container.legs.map(&:expiration).map(&:date).uniq.count == 1
             raise ComboFormError.new("Should be a calendar / diagonal! #{container.legs.each(&:nice_print)}")
           end
 

@@ -72,6 +72,10 @@ module TTK
             side == :long
           end
 
+          def expiration
+            legs.map(&:expiration).min
+          end
+
           private
 
           # Make sure this spread is of the proper form

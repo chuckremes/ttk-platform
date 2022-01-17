@@ -32,7 +32,7 @@ module TTK
 
           def expiration_date
             # verticals only have one expiration
-            legs[0].expiration_date.date
+            legs[0].expiration.date
           end
 
           # FIXME: need tests to confirm this is always part of interface
@@ -69,7 +69,7 @@ module TTK
 
           def check_expiration(container)
             # return if container.map(:expiration_date).uniq.count == 1
-            return if container.legs.map(&:expiration_date).map(&:date).uniq.count == 1
+            return if container.legs.map(&:expiration).map(&:date).uniq.count == 1
             raise ComboFormError.new("Should be a calendar / diagonal! #{container.legs.each(&:nice_print)}")
           end
 

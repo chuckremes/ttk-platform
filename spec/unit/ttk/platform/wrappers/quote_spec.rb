@@ -6,7 +6,7 @@ RSpec.describe TTK::Platform::Wrappers::Quote do
   let(:product) do
     TTK::Containers::Product::Example.new(
     security_type: security_type, symbol: symbol, callput: callput,
-    strike: strike, expiration_date: expiration_date)
+    strike: strike, expiration: expiration_date)
   end
   let(:expiration_date) { TTK::Containers::Product::Expiration::Example.new(year: year, month: month, day: day) }
 
