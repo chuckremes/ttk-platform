@@ -1,4 +1,3 @@
-
 # The abstract interface to all vendor order classes. Each strategy
 # knows which vendor(s) it is using, so during strategy setup the
 # vendor-specific class is passed to this class. This class delegates
@@ -14,15 +13,22 @@ module TTK
           @pending_cancels = @meta[:pending_cancels] || {}
         end
 
-        def spreads
-          # array = map do |order|
-          #   # In the future, may want to pass through the actual vendors
-          #   # classification if a) they provide one, and b) it is correct.
-          #   # By using nil we force the classification logic to exhaustively
-          #   # work through the possibilities.
-          #   TTK::Containers::Legs::Classifier::Combo.classify(container: order)
-          # end
+        # The Collections::Orders always return orders that are a vendor Response.
+        # When we want to manipulate that order like by modifing it then we need
+        # to wrap it first.
+        #
+        def wrap(order, writeable: true)
+          order = TTK::Platform::Orders::Write.from_response(order) if writeable
 
+          binding.pry
+          case order.order_type
+          when :doesnotexist
+          else
+            TTK::Platform::Wrappers::Vertical.new(order)
+          end
+        end
+
+        def spreads
           kinds = [:vertical, :diagonal, :calendar]
           array = select { |element| kinds.include?(element.order_type) }
           self.class.new(collection: array, vendor_interface: interface, meta: package_meta)
@@ -52,7 +58,7 @@ module TTK
           else
             STDERR.puts "cancel, cancelling order_id #{order.order_id}"
             @pending_cancels[order.order_id] = true
-            order.cancel(reason: reason)
+            interface.cancel(order: order, reason: reason)
           end
         rescue TTK::ETrade::Errors::PendingCancelForOrderAlready
           STDERR.puts "Attempt to cancel order_id [#{order.order_id}] with cancel pending"
@@ -65,7 +71,6 @@ module TTK
         def cleanup_confirmed_cancels
           cancelled = collection.status(:canceled).map { |o| o.order_id }
           @pending_cancels.delete_if { |order_id, _| cancelled.include?(order_id) }
-
           nil
         end
 

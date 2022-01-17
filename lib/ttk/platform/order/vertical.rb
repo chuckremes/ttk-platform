@@ -5,10 +5,11 @@ module TTK
     module Order
       class Vertical < Write
         def initialize(body:, wing:, vendor:)
-          @legs = [Leg.new(product: body.product, quote: body),
+          legs = [Leg.new(product: body.product, quote: body),
             Leg.new(product: wing.product, quote: wing)]
 
-          super(vendor: vendor)
+          # Note that superclass has a different signature
+          super(vendor: vendor, legs: legs)
         end
 
         def direction=(value)

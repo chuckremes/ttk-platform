@@ -83,17 +83,10 @@ module TTK
         end
 
         def verticals
-          self.class.new(collection: select { |element| element.respond_to?(:vertical?) && element.vertical? },
+          self.class.new(collection: select { |element| element.order_type == :vertical },
             vendor_interface: interface,
             meta: package_meta)
         end
-
-        #
-        # def by_strike(order: :ascending)
-        #   direction = order == :ascending ? 1 : -1
-        #
-        #   self.class.new(options.sort_by { |element| direction * element.strike })
-        # end
 
         def ascending(field: :execution_time)
           sort_by_field(field: field)

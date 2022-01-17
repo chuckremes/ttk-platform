@@ -1,11 +1,11 @@
-RSpec.describe TTK::Platform::Wrappers::Vertical do
+RSpec.describe TTK::Platform::Wrappers::Combo::Vertical do
   subject(:vertical) { described_class.new(container) }
 
   let(:spread) { TTK::Platform::Wrappers::Position.new(container) }
   let(:symbol) { "SPY" }
 
   context "with puts" do
-    context "given a bull put spread" do
+    context "given a bull put combo" do
       let(:container) { make_put_vertical_position(side: :short) }
       let(:strike1) { spread.legs[0].strike }
       let(:strike2) { spread.legs[1].strike }
@@ -61,7 +61,7 @@ RSpec.describe TTK::Platform::Wrappers::Vertical do
       end
     end
 
-    context "given a bear put spread" do
+    context "given a bear put combo" do
       let(:container) { make_put_vertical_position(side: :long) }
       let(:strike1) { spread.legs[0].strike }
       let(:strike2) { spread.legs[1].strike }
@@ -119,7 +119,7 @@ RSpec.describe TTK::Platform::Wrappers::Vertical do
   end
 
   context "with calls" do
-    context "given a bear call spread" do
+    context "given a bear call combo" do
       let(:container) { make_call_vertical_position(side: :short) }
       let(:strike1) { spread.legs[0].strike }
       let(:strike2) { spread.legs[1].strike }
@@ -175,7 +175,7 @@ RSpec.describe TTK::Platform::Wrappers::Vertical do
       end
     end
 
-    context "given a bull call spread" do
+    context "given a bull call combo" do
       let(:container) { make_call_vertical_position(side: :long) }
       let(:strike1) { spread.legs[0].strike }
       let(:strike2) { spread.legs[1].strike }

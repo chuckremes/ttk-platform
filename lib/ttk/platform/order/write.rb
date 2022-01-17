@@ -17,18 +17,57 @@ module TTK
         include TTK::Containers::Legs::Order::ComposedMethods
         extend Forwardable
         def_delegators :response,
-          :status, :fees, :commission, :placed_time, :execution_time, :preview_time
+          :leg_status, :fees, :commission, :placed_time, :execution_time, :preview_time,
+          :order_id, :preview_id
 
         ForwardingFailure = Class.new(StandardError)
+        MissingLegs = Class.new(StandardError)
+
+        # Called when we receive an existing open order from the vendor API.
+        # We want to use that Response so we take its #legs and then assign
+        # the order values to this new order value. The returned instance is
+        # now ready for further price modification and resubmission.
+        #
+        def self.from_existing_order(vendor:, response:)
+          instance = new(vendor: vendor, legs: response.legs)
+
+          # now set the values from the open order
+          instance.all_or_none = response.all_or_none
+          instance.order_term = response.order_term
+          instance.market_session = response.market_session
+          instance.quantity = response.unfilled_quantity
+          instance.price_type = response.price_type
+          instance.limit_price = response.limit_price
+          instance.stop_price = response.stop_price
+          instance
+        end
 
         private attr_reader :vendor
-        attr_reader :legs
 
-        def initialize(vendor:)
+        def initialize(vendor:, legs:)
           @vendor = vendor
           @preview_response = nil
           @place_response = nil
+          @legs = legs
+          @unsubmitted = true
           set_sensible_defaults
+        end
+
+        def legs
+          # When instance is originally set, we use the legs passed in. For a new order
+          # (e.g. Vertical) this will be the body + wing. For an existing open order, this
+          # will be Response#legs. Once we start to preview or place a new/change to the
+          # order, then we prefer to use those new response legs over what we initialized
+          # this class with.
+          if @preview_response.respond_to?(:legs)
+            @preview_response.legs
+          elsif @place_response.respond_to?(:legs)
+            @place_response.legs
+          elsif !!@legs
+            @legs
+          else
+            raise MissingLegs.new
+          end
         end
 
         def preview!
@@ -37,6 +76,7 @@ module TTK
           # correctly, so minimize changes to it!
           @preview_response, @preview_payload = yield
           @place_response = nil
+          @unsubmitted = false
           !!@preview_response
         end
 
@@ -48,11 +88,19 @@ module TTK
           # subclass uses @preview_payload to pass to a call inside the block
           @place_response = yield
           @preview_response = nil # remove so that calls to #response pick correctly
+          @unsubmitted = false
           !!@place_response
         end
 
         def submit_ok?
           true
+        end
+
+        # Returns true when the order has not been previewed or placed yet.
+        # False otherwise.
+        #
+        def unsubmitted?
+          @unsubmitted
         end
 
         def preview_errors
@@ -117,10 +165,8 @@ module TTK
         end
 
         def quantity
-          # does the parent match this naming? may need to be #unfilled_quantity
-          # # FIXME... not right... see the Shared logic for greatest common factor
-          # and see how to call that from here
-          @quantity
+          # calls the ComposedMethod included here
+          unfilled_quantity
         end
 
         def order_term=(value)

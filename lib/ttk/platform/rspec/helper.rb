@@ -11,7 +11,7 @@ module Helper
   #
   def make_put_vertical_position(side: :long, quantity: 1, strike: 100)
     legs = make_put_vertical_position_legs(side: side, quantity: quantity, strike: strike)
-    TTK::Platform::Wrappers::Vertical.new(legs)
+    TTK::Platform::Wrappers::Combo::Vertical.new(legs)
   end
 
   def make_put_vertical_position_legs(side: :long, quantity: 1, strike: 100)
@@ -24,7 +24,7 @@ module Helper
 
   def make_call_vertical_position(side: :long, quantity: 1, strike: 100)
     legs = make_call_vertical_position_legs(side: side, quantity: quantity, strike: strike)
-    TTK::Platform::Wrappers::Vertical.new(legs)
+    TTK::Platform::Wrappers::Combo::Vertical.new(legs)
   end
 
   def make_call_vertical_position_legs(side: :long, quantity: 1, strike: 100)
