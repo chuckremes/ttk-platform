@@ -68,7 +68,7 @@ module TTK
         # it here for updates.
         #
         def register(quote:)
-          return unless quote.respond_to?(:update_quote)
+          raise "Object needs to respond to :update_quote" unless quote.respond_to?(:update_quote)
           collection << quote
         end
 
