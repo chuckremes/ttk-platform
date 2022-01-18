@@ -4,9 +4,8 @@ module TTK
   module Platform
     module Order
       class Vertical < Write
-        def initialize(body:, wing:, vendor:)
-          legs = [Leg.new(product: body.product, quote: body),
-            Leg.new(product: wing.product, quote: wing)]
+        def initialize(legs:, vendor:)
+          legs = legs.map { |l| Leg.new(product: l.product, quote: l) }
 
           # Note that superclass has a different signature
           super(vendor: vendor, legs: legs)

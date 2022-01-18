@@ -13,21 +13,6 @@ module TTK
           @pending_cancels = @meta[:pending_cancels] || {}
         end
 
-        # The Collections::Orders always return orders that are a vendor Response.
-        # When we want to manipulate that order like by modifing it then we need
-        # to wrap it first.
-        #
-        def wrap(order, writeable: true)
-          order = TTK::Platform::Orders::Write.from_response(order) if writeable
-
-          binding.pry
-          case order.order_type
-          when :doesnotexist
-          else
-            TTK::Platform::Wrappers::Vertical.new(order)
-          end
-        end
-
         def spreads
           kinds = [:vertical, :diagonal, :calendar]
           array = select { |element| kinds.include?(element.order_type) }
@@ -42,8 +27,8 @@ module TTK
           # container = @collection.new_vertical_spread(body_leg: body_leg, wing_leg: wing_leg)
           # # binding.pry
           # TTK::Platform::Wrappers::Vertical.new(container)
-          TTK::Platform::Wrappers::Vertical.new(TTK::Platform::Order::Vertical.new(
-            body: body_leg, wing: wing_leg, vendor: interface))
+          TTK::Platform::Wrappers::Combo::Vertical.new(TTK::Platform::Order::Vertical.new(
+            legs:[body_leg, wing_leg], vendor: interface))
         end
 
         # Takes a request to cancel an order and submits it. If there is already a pending

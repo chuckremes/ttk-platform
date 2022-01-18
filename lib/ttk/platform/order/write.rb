@@ -29,7 +29,7 @@ module TTK
         # now ready for further price modification and resubmission.
         #
         def self.from_existing_order(vendor:, response:)
-          instance = new(vendor: vendor, legs: response.legs)
+          instance = choose_type(response).new(vendor: vendor, legs: response.legs)
 
           # now set the values from the open order
           instance.all_or_none = response.all_or_none
@@ -39,7 +39,18 @@ module TTK
           instance.price_type = response.price_type
           instance.limit_price = response.limit_price
           instance.stop_price = response.stop_price
+          instance.direction = response.action =~ /open/i ? :opening : :closing
+          instance.side = response.action =~ /buy/i ? :long : :short
           instance
+        end
+
+        def self.choose_type(response)
+          case response.order_type
+          when :vertical
+            Vertical
+          else
+            raise "Need to define #{response.order_type} Write subclass"
+          end
         end
 
         private attr_reader :vendor
@@ -48,7 +59,7 @@ module TTK
           @vendor = vendor
           @preview_response = nil
           @place_response = nil
-          @legs = legs
+          self.legs = legs # makes sure legs are sorted correctly via ComposedMethods
           @unsubmitted = true
           set_sensible_defaults
         end
@@ -109,6 +120,10 @@ module TTK
 
         def submit_errors
           []
+        end
+
+        def status
+          :open # how could it be anything else?
         end
 
         def direction=(value)
@@ -190,7 +205,7 @@ module TTK
         end
 
         def limit_price=(value)
-          return @limit_price = value if value.is_a?(Float)
+          return @limit_price = value.to_f if value.is_a?(Float) || value.is_a?(Integer)
 
           raise ArgumentError.new("Argument must be a Float, received #{value.class}")
         end
@@ -201,7 +216,7 @@ module TTK
         end
 
         def stop_price=(value)
-          return @stop_price = value if value.is_a?(Float)
+          return @stop_price = value.to_f if value.is_a?(Float) || value.is_a?(Integer)
 
           raise ArgumentError.new("Argument must be a Float, received #{value.class}")
         end
