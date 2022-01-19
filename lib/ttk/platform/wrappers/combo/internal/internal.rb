@@ -82,22 +82,25 @@ module TTK
                 mantissa.round(2).to_s.rjust(8).ljust(9) if debug
 
               # accumulate the delta for each $1 difference in cost
-              # if moving *down* towards ATM, then delta should get bigger so add in gamma for
-              # each $1 move
-              # as we get more OTM, gamma should shrink; as it gets more ITM, it should grow
+              # If difference is positive, then current price is OTM moving towards ATM when
+              # difference is 0. Delta and gamma should be growing toward ATM, so accumulate larger values.
+              # If difference is negative, then current price is ITM and moving towards ATM
+              # when difference is 0. Delta and gamma should shrink toward ATM.
               # this gamma model is weak as it's using a fixed 10%
               integral.abs.times do
-                spread_delta = difference.positive? ? (spread_delta - spread_gamma) : (spread_delta + spread_gamma)
-                spread_gamma = difference.positive? ? (spread_gamma - (spread_gamma * 0.1)) : (spread_gamma + (spread_gamma * 0.1))
+                spread_delta = difference.positive? ? (spread_delta + spread_gamma) : (spread_delta - spread_gamma)
+                spread_gamma = difference.positive? ? (spread_gamma + (spread_gamma * 0.1)) : (spread_gamma - (spread_gamma * 0.1))
                 total += spread_delta
               end
 
               # account for the fractional dollar by adding those cents to the total
               total += (spread_delta * mantissa)
 
-              # if spread is moving more towards ITM, we'll want this to be a positive number
-              # if spread moving more towards OTM, we'll want it to be negative so price is smaller
-              total = difference.positive? ? -total : total
+              # If difference is positive, we are OTM and we want the total to be a positive
+              # number
+              # If difference is negative, we are ITM and we want the total to be negative
+              # as it approaches target
+              total = difference.positive? ? total : -total
               STDERR.puts "total".rjust(7).ljust(8) +
                 "mid".rjust(7).ljust(8) +
                 "sum".rjust(7).ljust(8) if debug

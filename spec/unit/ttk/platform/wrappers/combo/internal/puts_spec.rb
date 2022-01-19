@@ -14,14 +14,14 @@ RSpec.describe TTK::Platform::Wrappers::Combo::Internal::Puts do
       let(:legs) { make_put_vertical_position_legs(side: :long) }
       let(:delta) { -0.50 }
       let(:gamma) { -0.04 }
-      let(:midpoint) { 2.0 }
+      let(:midpoint) { 5.0 }
 
       context "when price is close to strike and above it then" do
         let(:underlying) { 422.10 }
         let(:target_strike) { 422.0 }
 
-        it "price decreases from midpoint" do
-          change = -0.05 # about 5 cents
+        it "price increases above midpoint" do
+          change = 0.05 # about 5 cents
           expect(project).to be_within(0.001).of(midpoint + change)
         end
       end
@@ -30,8 +30,8 @@ RSpec.describe TTK::Platform::Wrappers::Combo::Internal::Puts do
         let(:underlying) { 422.90 }
         let(:target_strike) { 422.0 }
 
-        it "price decreases from midpoint" do
-          change = -0.45
+        it "price increases above midpoint" do
+          change = 0.45
           expect(project).to be_within(0.001).of(midpoint + change)
         end
       end
@@ -40,8 +40,8 @@ RSpec.describe TTK::Platform::Wrappers::Combo::Internal::Puts do
         let(:underlying) { 425.90 }
         let(:target_strike) { 422.0 }
 
-        it "price decreases from midpoint" do
-          change = -1.63
+        it "price increases above midpoint" do
+          change = 2.33
           expect(project).to be_within(0.005).of(midpoint + change)
         end
       end
@@ -50,8 +50,8 @@ RSpec.describe TTK::Platform::Wrappers::Combo::Internal::Puts do
         let(:underlying) { 421.90 }
         let(:target_strike) { 422.0 }
 
-        it "price increases above midpoint" do
-          change = 0.05
+        it "price decreases below midpoint" do
+          change = -0.05
           expect(project).to be_within(0.001).of(midpoint + change)
         end
       end
@@ -60,8 +60,8 @@ RSpec.describe TTK::Platform::Wrappers::Combo::Internal::Puts do
         let(:underlying) { 421.10 }
         let(:target_strike) { 422.0 }
 
-        it "price increases above midpoint" do
-          change = 0.45
+        it "price decreases below midpoint" do
+          change = -0.45
           expect(project).to be_within(0.001).of(midpoint + change)
         end
       end
@@ -70,8 +70,8 @@ RSpec.describe TTK::Platform::Wrappers::Combo::Internal::Puts do
         let(:underlying) { 418.10 }
         let(:target_strike) { 422.0 }
 
-        it "price increases above midpoint" do
-          change = 2.33
+        it "price decreases below midpoint" do
+          change = -1.63
           expect(project).to be_within(0.005).of(midpoint + change)
         end
       end
@@ -81,14 +81,14 @@ RSpec.describe TTK::Platform::Wrappers::Combo::Internal::Puts do
       let(:legs) { make_put_vertical_position_legs(side: :short) }
       let(:delta) { 0.50 }
       let(:gamma) { 0.04 }
-      let(:midpoint) { 2.0 }
+      let(:midpoint) { 5.0 }
 
       context "when price is close to strike and above it" do
         let(:underlying) { 422.10 }
         let(:target_strike) { 422.0 }
 
-        it "decreases the price from midpoint" do
-          change = -0.05 # about 5 cents
+        it "increases the price above midpoint" do
+          change = 0.05 # about 5 cents
           expect(project).to be_within(0.001).of(midpoint + change)
         end
       end
@@ -97,8 +97,8 @@ RSpec.describe TTK::Platform::Wrappers::Combo::Internal::Puts do
         let(:underlying) { 422.90 }
         let(:target_strike) { 422.0 }
 
-        it "decreases the price from midpoint" do
-          change = -0.45
+        it "increases the price above midpoint" do
+          change = 0.45
           expect(project).to be_within(0.001).of(midpoint + change)
         end
       end
@@ -107,8 +107,8 @@ RSpec.describe TTK::Platform::Wrappers::Combo::Internal::Puts do
         let(:underlying) { 425.90 }
         let(:target_strike) { 422.0 }
 
-        it "decreases the price from midpoint" do
-          change = -1.63
+        it "increases the price above midpoint" do
+          change = 2.33
           expect(project).to be_within(0.005).of(midpoint + change)
         end
       end
@@ -117,8 +117,8 @@ RSpec.describe TTK::Platform::Wrappers::Combo::Internal::Puts do
         let(:underlying) { 421.90 }
         let(:target_strike) { 422.0 }
 
-        it "price increases above midpoint" do
-          change = 0.05
+        it "price decreases below midpoint" do
+          change = -0.05
           expect(project).to be_within(0.001).of(midpoint + change)
         end
       end
@@ -127,8 +127,8 @@ RSpec.describe TTK::Platform::Wrappers::Combo::Internal::Puts do
         let(:underlying) { 421.10 }
         let(:target_strike) { 422.0 }
 
-        it "price increases above midpoint" do
-          change = 0.45
+        it "price decreases below midpoint" do
+          change = -0.45
           expect(project).to be_within(0.001).of(midpoint + change)
         end
       end
@@ -137,8 +137,8 @@ RSpec.describe TTK::Platform::Wrappers::Combo::Internal::Puts do
         let(:underlying) { 418.10 }
         let(:target_strike) { 422.0 }
 
-        it "price increases above midpoint" do
-          change = 2.33
+        it "price decreases below midpoint" do
+          change = -1.63
           expect(project).to be_within(0.005).of(midpoint + change)
         end
       end
