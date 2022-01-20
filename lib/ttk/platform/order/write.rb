@@ -41,6 +41,7 @@ module TTK
           instance.stop_price = response.stop_price
           instance.direction = response.action =~ /open/i ? :opening : :closing
           instance.side = response.action =~ /buy/i ? :long : :short
+          instance.order_id = response.order_id
           instance
         end
 
@@ -71,10 +72,13 @@ module TTK
           # order, then we prefer to use those new response legs over what we initialized
           # this class with.
           if @preview_response.respond_to?(:legs)
+            puts "Forwarding to preview legs" if $GREEKS
             @preview_response.legs
           elsif @place_response.respond_to?(:legs)
+            puts "Forwarding to place legs" if $GREEKS
             @place_response.legs
           elsif !!@legs
+            puts "Forwarding to init @legs" if $GREEKS
             @legs
           else
             raise MissingLegs.new
@@ -99,6 +103,7 @@ module TTK
           # subclass uses @preview_payload to pass to a call inside the block
           @place_response = yield
           @preview_response = nil # remove so that calls to #response pick correctly
+          @order_id = @place_response.order_id
           @unsubmitted = false
           !!@place_response
         end
@@ -124,6 +129,21 @@ module TTK
 
         def status
           :open # how could it be anything else?
+        end
+
+        def order_id=(value)
+          @order_id = value
+        end
+
+        def order_id
+          # if set, then this instance was built from an existing Response
+          # if not set, then #super executes the forwarding #def_delegators
+          # logic and forwards to an internal Response
+          if @order_id
+            @order_id
+          elsif response.respond_to?(:order_id)
+            super
+          end
         end
 
         def direction=(value)
@@ -228,7 +248,14 @@ module TTK
         private
 
         def response
-          @preview_response || @place_response || fail
+          if @preview_response
+            puts "Forwarding to preview response" if $GREEKS
+            @preview_response
+          elsif @place_response
+            puts "Forwarding to place response" if $GREEKS
+            @place_response
+          end
+          # @preview_response || @place_response || fail
         end
 
         def fail
