@@ -25,6 +25,21 @@ module TTK
           end
         end
 
+        # Returns a number describing how many gaps there are between strikes
+        # given a +strike_size+. That is, if strike size is 1.0 and we have
+        # strikes 3.0, 4.0, 6.0, 7.0, and 11.0 then we will have 2 gaps
+        # (4.0 to 6.0 and 7.0 to 11.0).
+        #
+        def gap_count(strike_size=1.0)
+          gaps = []
+          collection
+            .sort_by { |e| e.strike }
+            .each_cons(2) { |a,b| gaps << (a.strike - b.strike).abs }
+
+          # now subtract all instances where gap is equal to +strike_size+
+          (gaps - [strike_size]).count
+        end
+
         def dte(min: nil, max: nil, exact: nil)
           if exact
             min = max = exact
